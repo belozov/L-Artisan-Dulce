@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "719414434481",
+    "project_id": "l--artisan-dulce",
+    "storage_bucket": "l--artisan-dulce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719414434481:android:65d45cf92ec83a5c96a090",
+        "android_client_info": {
+          "package_name": "com.example.simple"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnIR6eelYu5I4pQjgLMPI3NloOW0KdiWo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
