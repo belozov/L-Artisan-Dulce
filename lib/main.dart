@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'firebase_options.dart';
 import 'state/app_state.dart';
 import 'pages/app_shell.dart';
 import 'pages/welcome_view.dart';
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -32,7 +38,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final _appState = AppState();
+  final AppState _appState = AppState();
 
   @override
   void initState() {
@@ -53,12 +59,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: "L'Artisan Dulce",
-        theme: ThemeData(
-          fontFamily: 'Poppins',
-          useMaterial3: true,
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-        ),
+        theme: ThemeData(useMaterial3: true, fontFamily: 'Poppins'),
         home: ListenableBuilder(
           listenable: _appState,
           builder: (context, _) {

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/product_model.dart';
 import '../services/product_repository.dart';
+import '../services/notification_service.dart';
 
 class CartItem {
   final String productId;
@@ -71,7 +72,9 @@ class AppState extends ChangeNotifier {
 
     if (user != null) {
       _isSignedIn = true;
+
       await _loadUserProfile(user.uid);
+      await NotificationService.init();
       await loadFavoritesFromDb();
       await loadCartFromDb();
       await loadOrdersFromDb();
@@ -97,6 +100,7 @@ class AppState extends ChangeNotifier {
       }
 
       await _loadUserProfile(user.uid);
+      await NotificationService.init();
       await loadFavoritesFromDb();
       await loadCartFromDb();
       await loadOrdersFromDb();
@@ -149,7 +153,10 @@ class AppState extends ChangeNotifier {
       _profilePhotoPath = '';
       _deliveryAddress = '';
       _notificationsEnabled = true;
+      _paymentLast4 = '4829';
+      _paymentBrand = 'Visa';
 
+      await NotificationService.init();
       await loadFavoritesFromDb();
       await loadCartFromDb();
       await loadOrdersFromDb();
@@ -572,6 +579,11 @@ class AppState extends ChangeNotifier {
     _cartItems.clear();
 
     await loadOrdersFromDb();
+
+    await NotificationService.showLocalNotification(
+      title: 'Order created',
+      body: 'Your dessert order is being prepared.',
+    );
 
     _currentTabIndex = 2;
     notifyListeners();
