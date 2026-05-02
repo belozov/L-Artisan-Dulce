@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,10 +17,12 @@ class ProfileViewModel extends ChangeNotifier {
   String _paymentLast4 = '4829';
   String _paymentBrand = 'Visa';
   String _profilePhotoPath = '';
+  bool _isGettingLocation = false;
 
   String get profilePhotoPath => _profilePhotoPath;
   String get userName => _userName;
   String get userEmail => _userEmail;
+  bool get isGettingLocation => _isGettingLocation;
 
   String get userInitials {
     final parts = _userName.trim().split(' ');
@@ -100,12 +104,12 @@ class ProfileViewModel extends ChangeNotifier {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final dir = await getApplicationDocumentsDirectory();
+    final appDir = await getApplicationDocumentsDirectory();
 
     final fileName =
         'profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    final savedFile = await File(path).copy('${dir.path}/$fileName');
+    final savedFile = await File(path).copy('${appDir.path}/$fileName');
 
     _profilePhotoPath = savedFile.path;
     notifyListeners();
@@ -117,15 +121,24 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> removeProfilePhoto() async {
-    _profilePhotoPath = '';
     final user = _auth.currentUser;
+
+    if (_profilePhotoPath.isNotEmpty) {
+      final file = File(_profilePhotoPath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+
+    _profilePhotoPath = '';
+    notifyListeners();
+
     if (user != null) {
-      await _db.collection('users').doc(user.uid).update({
+      await _db.collection('users').doc(user.uid).set({
         'photoUrl': '',
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
     }
-    notifyListeners();
   }
 
   Future<void> toggleNotifications() async {
@@ -151,6 +164,76 @@ class ProfileViewModel extends ChangeNotifier {
       });
     }
     notifyListeners();
+  }
+
+  Future<void> useCurrentLocationAsAddress() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    _isGettingLocation = true;
+    notifyListeners();
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        debugPrint('GPS error: Location services are disabled');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        debugPrint('GPS error: Location permission denied');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      String address = '';
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+
+        address = [
+          place.street,
+          place.locality,
+          place.administrativeArea,
+          place.country,
+        ].where((e) => e != null && e.trim().isNotEmpty).join(', ');
+      }
+
+      if (address.isEmpty) {
+        address = '${position.latitude}, ${position.longitude}';
+      }
+
+      _deliveryAddress = address;
+      notifyListeners();
+
+      await _db.collection('users').doc(user.uid).set({
+        'deliveryAddress': _deliveryAddress,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('GPS error: $e');
+    } finally {
+      _isGettingLocation = false;
+      notifyListeners();
+    }
   }
 
   Future<void> updatePayment({

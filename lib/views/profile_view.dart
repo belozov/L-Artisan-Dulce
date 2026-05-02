@@ -185,10 +185,11 @@ class ProfileView extends StatelessWidget {
                 child: profileVM.profilePhotoPath.isNotEmpty
                     ? Image.file(
                         File(profileVM.profilePhotoPath),
+                        key: ValueKey(profileVM.profilePhotoPath),
                         width: 96,
                         height: 96,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, a, b) => Center(
+                        errorBuilder: (_, __, ___) => Center(
                           child: Text(
                             profileVM.userInitials,
                             style: const TextStyle(
@@ -639,9 +640,6 @@ class ProfileView extends StatelessWidget {
   }
 
   void _editAddress(BuildContext context) {
-    final profileVM = context.read<ProfileViewModel>();
-    final ctrl = TextEditingController(text: profileVM.deliveryAddress);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -649,37 +647,124 @@ class ProfileView extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          16,
-          24,
-          MediaQuery.of(ctx).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _handle(),
-            const SizedBox(height: 20),
-            const Text(
-              'Delivery Address',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
+      builder: (ctx) => Consumer<ProfileViewModel>(
+        builder: (context, profileVM, _) {
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              16,
+              24,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
             ),
-            const SizedBox(height: 20),
-            _field('Address', ctrl),
-            const SizedBox(height: 20),
-            _primaryButton('Save Address', () async {
-              await profileVM.updateDeliveryAddress(ctrl.text);
-              if (ctx.mounted) Navigator.pop(ctx);
-              if (context.mounted) _snack(context, 'Address updated');
-            }),
-            const SizedBox(height: 8),
-          ],
-        ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _handle(),
+                const SizedBox(height: 20),
+
+                const Text(
+                  'Delivery Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 📍 ПОКАЗЫВАЕМ АДРЕС
+                if (profileVM.deliveryAddress.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightPink,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      profileVM.deliveryAddress,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+
+                // 🔥 КНОПКА GPS
+                TactileWrapper(
+                  onTap: profileVM.isGettingLocation
+                      ? () {}
+                      : () async {
+                          await profileVM.useCurrentLocationAsAddress();
+
+                          if (context.mounted) {
+                            _snack(context, 'Address updated from GPS');
+                          }
+                        },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primaryPink, AppColors.accentPink],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: profileVM.isGettingLocation
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.my_location,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Get My Location',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 💾 СОХРАНИТЬ
+                if (profileVM.deliveryAddress.isNotEmpty)
+                  _primaryButton('Save Address', () async {
+                    await profileVM.updateDeliveryAddress(
+                      profileVM.deliveryAddress,
+                    );
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (context.mounted) {
+                      _snack(context, 'Address saved');
+                    }
+                  }),
+
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
