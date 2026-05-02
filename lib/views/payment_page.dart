@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../state/app_state.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
+import '../viewmodels/profile_viewmodel.dart';
 import '../widgets/tactile_wrapper.dart';
 
 class PaymentPage extends StatefulWidget {
@@ -80,9 +81,7 @@ class _PaymentPageState extends State<PaymentPage> {
     final brand = _detectBrand(number);
     final last4 = number.substring(number.length - 4);
 
-    await AppStateProvider.of(
-      context,
-    ).updatePayment(last4: last4, brand: brand);
+    await context.read<ProfileViewModel>().updatePayment(last4: last4, brand: brand);
 
     if (!mounted) return;
 
@@ -92,7 +91,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
+    final profileVM = context.watch<ProfileViewModel>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -157,7 +156,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                   const SizedBox(height: 26),
                   Text(
-                    state.paymentBrand,
+                    profileVM.paymentBrand,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -166,7 +165,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '•••• •••• •••• ${state.paymentLast4}',
+                    '•••• •••• •••• ${profileVM.paymentLast4}',
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,

@@ -2,7 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../state/app_state.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/auth_viewmodel.dart';
+import '../viewmodels/cart_viewmodel.dart';
+import '../viewmodels/favorites_viewmodel.dart';
+import '../viewmodels/navigation_viewmodel.dart';
+import '../viewmodels/orders_viewmodel.dart';
+import '../viewmodels/profile_viewmodel.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/tactile_wrapper.dart';
 
@@ -14,31 +21,34 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
+    final profileVM = context.watch<ProfileViewModel>();
+    final ordersVM = context.watch<OrdersViewModel>();
+    final favVM = context.watch<FavoritesViewModel>();
+    final navVM = context.watch<NavigationViewModel>();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
           const SizedBox(height: 24),
-          _buildHeader(context, state),
+          _buildHeader(context),
           const SizedBox(height: 24),
-          _buildStats(state),
+          _buildStats(context),
           const SizedBox(height: 24),
 
           _section('My Orders', [
             _item(
               Icons.shopping_bag_outlined,
               'Active Orders',
-              trailing: state.activeOrders.isNotEmpty
-                  ? _badge('${state.activeOrders.length}')
+              trailing: ordersVM.activeOrders.isNotEmpty
+                  ? _badge('${ordersVM.activeOrders.length}')
                   : null,
-              onTap: () => state.switchTab(2),
+              onTap: () => navVM.switchTab(2),
             ),
             _item(
               Icons.history,
               'Order History',
-              onTap: () => state.switchTab(2),
+              onTap: () => navVM.switchTab(2),
             ),
           ]),
 
@@ -48,8 +58,8 @@ class ProfileView extends StatelessWidget {
             _item(
               Icons.favorite_border,
               'Favorites',
-              trailing: state.favoriteCount > 0
-                  ? _badge('${state.favoriteCount}')
+              trailing: favVM.favoriteCount > 0
+                  ? _badge('${favVM.favoriteCount}')
                   : null,
               onTap: () {
                 Navigator.push(
@@ -61,13 +71,13 @@ class ProfileView extends StatelessWidget {
             _item(
               Icons.location_on_outlined,
               'Delivery Address',
-              subtitle: state.deliveryAddress,
-              onTap: () => _editAddress(context, state),
+              subtitle: profileVM.deliveryAddress,
+              onTap: () => _editAddress(context),
             ),
             _item(
               Icons.credit_card_outlined,
               'Payment Methods',
-              subtitle: state.paymentDisplay,
+              subtitle: profileVM.paymentDisplay,
               onTap: () {
                 Navigator.push(
                   context,
@@ -78,12 +88,12 @@ class ProfileView extends StatelessWidget {
             _item(
               Icons.notifications_none,
               'Notifications',
-              trailing: _toggle(state.notificationsEnabled),
+              trailing: _toggle(profileVM.notificationsEnabled),
               onTap: () {
-                state.toggleNotifications();
+                profileVM.toggleNotifications();
                 _snack(
                   context,
-                  'Notifications ${state.notificationsEnabled ? 'enabled' : 'disabled'}',
+                  'Notifications ${profileVM.notificationsEnabled ? 'enabled' : 'disabled'}',
                 );
               },
             ),
@@ -149,7 +159,8 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppState state) {
+  Widget _buildHeader(BuildContext context) {
+    final profileVM = context.watch<ProfileViewModel>();
     return Column(
       children: [
         Stack(
@@ -171,15 +182,15 @@ class ProfileView extends StatelessWidget {
                 ],
               ),
               child: ClipOval(
-                child: state.profilePhotoPath.isNotEmpty
+                child: profileVM.profilePhotoPath.isNotEmpty
                     ? Image.file(
-                        File(state.profilePhotoPath),
+                        File(profileVM.profilePhotoPath),
                         width: 96,
                         height: 96,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _a, _b) => Center(
+                        errorBuilder: (_, a, b) => Center(
                           child: Text(
-                            state.userInitials,
+                            profileVM.userInitials,
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w700,
@@ -190,7 +201,7 @@ class ProfileView extends StatelessWidget {
                       )
                     : Center(
                         child: Text(
-                          state.userInitials,
+                          profileVM.userInitials,
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.w700,
@@ -204,7 +215,7 @@ class ProfileView extends StatelessWidget {
               bottom: 0,
               right: 0,
               child: TactileWrapper(
-                onTap: () => _showPhotoPicker(context, state),
+                onTap: () => _showPhotoPicker(context),
                 child: Container(
                   width: 32,
                   height: 32,
@@ -225,7 +236,7 @@ class ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          state.userName,
+          profileVM.userName,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
@@ -234,12 +245,12 @@ class ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         TactileWrapper(
-          onTap: () => _editProfile(context, state),
+          onTap: () => _editProfile(context),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                state.userEmail,
+                profileVM.userEmail,
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -265,7 +276,10 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildStats(AppState state) {
+  Widget _buildStats(BuildContext context) {
+    final cartVM = context.watch<CartViewModel>();
+    final favVM = context.watch<FavoritesViewModel>();
+    final ordersVM = context.watch<OrdersViewModel>();
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
@@ -277,15 +291,15 @@ class ProfileView extends StatelessWidget {
         children: [
           _stat(
             Icons.shopping_bag_outlined,
-            '${state.cartItemCount}',
+            '${cartVM.cartItemCount}',
             'In Cart',
           ),
           Container(width: 1, height: 40, color: AppColors.accentPink),
-          _stat(Icons.favorite_border, '${state.favoriteCount}', 'Favorites'),
+          _stat(Icons.favorite_border, '${favVM.favoriteCount}', 'Favorites'),
           Container(width: 1, height: 40, color: AppColors.accentPink),
           _stat(
             Icons.receipt_long_outlined,
-            '${state.orderHistory.length + state.activeOrders.length}',
+            '${ordersVM.orderHistory.length + ordersVM.activeOrders.length}',
             'Orders',
           ),
         ],
@@ -465,7 +479,8 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  void _showPhotoPicker(BuildContext context, AppState state) {
+  void _showPhotoPicker(BuildContext context) {
+    final profileVM = context.read<ProfileViewModel>();
     final picker = ImagePicker();
 
     showModalBottomSheet(
@@ -498,7 +513,7 @@ class ProfileView extends StatelessWidget {
                 imageQuality: 80,
               );
               if (image != null) {
-                await state.setProfilePhoto(image.path);
+                await profileVM.setProfilePhoto(image.path);
                 if (context.mounted) {
                   _snack(context, 'Profile photo updated');
                 }
@@ -516,17 +531,17 @@ class ProfileView extends StatelessWidget {
                   imageQuality: 80,
                 );
                 if (image != null) {
-                  await state.setProfilePhoto(image.path);
+                  await profileVM.setProfilePhoto(image.path);
                   if (context.mounted) {
                     _snack(context, 'Profile photo updated');
                   }
                 }
               },
             ),
-            if (state.profilePhotoPath.isNotEmpty)
+            if (profileVM.profilePhotoPath.isNotEmpty)
               _photoOption(ctx, Icons.delete_outline, 'Remove Photo', () async {
                 Navigator.pop(ctx);
-                await state.removeProfilePhoto();
+                await profileVM.removeProfilePhoto();
                 if (context.mounted) {
                   _snack(context, 'Profile photo removed');
                 }
@@ -571,9 +586,10 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  void _editProfile(BuildContext context, AppState state) {
-    final nameCtrl = TextEditingController(text: state.userName);
-    final emailCtrl = TextEditingController(text: state.userEmail);
+  void _editProfile(BuildContext context) {
+    final profileVM = context.read<ProfileViewModel>();
+    final nameCtrl = TextEditingController(text: profileVM.userName);
+    final emailCtrl = TextEditingController(text: profileVM.userEmail);
 
     showModalBottomSheet(
       context: context,
@@ -608,7 +624,7 @@ class ProfileView extends StatelessWidget {
             _field('Email', emailCtrl, type: TextInputType.emailAddress),
             const SizedBox(height: 20),
             _primaryButton('Save Changes', () async {
-              await state.updateProfile(
+              await profileVM.updateProfile(
                 name: nameCtrl.text,
                 email: emailCtrl.text,
               );
@@ -622,8 +638,9 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  void _editAddress(BuildContext context, AppState state) {
-    final ctrl = TextEditingController(text: state.deliveryAddress);
+  void _editAddress(BuildContext context) {
+    final profileVM = context.read<ProfileViewModel>();
+    final ctrl = TextEditingController(text: profileVM.deliveryAddress);
 
     showModalBottomSheet(
       context: context,
@@ -656,7 +673,7 @@ class ProfileView extends StatelessWidget {
             _field('Address', ctrl),
             const SizedBox(height: 20),
             _primaryButton('Save Address', () async {
-              await state.updateDeliveryAddress(ctrl.text);
+              await profileVM.updateDeliveryAddress(ctrl.text);
               if (ctx.mounted) Navigator.pop(ctx);
               if (context.mounted) _snack(context, 'Address updated');
             }),
@@ -809,7 +826,7 @@ class ProfileView extends StatelessWidget {
   }
 
   void _confirmSignOut(BuildContext context) {
-    final state = AppStateProvider.of(context);
+    final authVM = context.read<AuthViewModel>();
 
     showDialog(
       context: context,
@@ -838,7 +855,7 @@ class ProfileView extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await state.signOut();
+              await authVM.signOut();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.heartRed,

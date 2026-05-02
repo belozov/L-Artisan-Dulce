@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../models/product_model.dart';
-import '../state/app_state.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/cart_viewmodel.dart';
+import '../viewmodels/favorites_viewmodel.dart';
 import '../widgets/tactile_wrapper.dart';
 
 class DetailView extends StatefulWidget {
@@ -36,9 +38,9 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  void _toggleFav(AppState state) {
-    final wasFav = state.isFavorite(widget.product.id);
-    state.toggleFavorite(widget.product.id);
+  void _toggleFav(FavoritesViewModel favVM) {
+    final wasFav = favVM.isFavorite(widget.product.id);
+    favVM.toggleFavorite(widget.product.id);
     if (!wasFav) {
       _heartController.forward(from: 0);
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -57,8 +59,8 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final state = AppStateProvider.of(context);
-    final isFav = state.isFavorite(product.id);
+    final favVM = context.watch<FavoritesViewModel>();
+    final isFav = favVM.isFavorite(product.id);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -131,7 +133,7 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
               ),
             ),
           ),
-          _buildBottomBar(product, state, isFav),
+          _buildBottomBar(product, isFav),
         ],
       ),
     );
@@ -222,7 +224,7 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
             height: 220,
             width: 220,
             fit: BoxFit.cover,
-            errorBuilder: (_, _a, _b) => Container(
+            errorBuilder: (_, a, b) => Container(
               height: 220, width: 220,
               decoration: BoxDecoration(
                 color: AppColors.lightPink,
@@ -411,7 +413,7 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildBottomBar(Product product, AppState state, bool isFav) {
+  Widget _buildBottomBar(Product product, bool isFav) {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(
@@ -421,7 +423,7 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
       child: Row(
         children: [
           TactileWrapper(
-            onTap: () => _toggleFav(state),
+            onTap: () => _toggleFav(context.read<FavoritesViewModel>()),
             child: ScaleTransition(
               scale: _heartScale,
               child: Container(
@@ -443,7 +445,8 @@ class _DetailViewState extends State<DetailView> with TickerProviderStateMixin {
           Expanded(
             child: TactileWrapper(
               onTap: () {
-                state.addToCart(product, _quantity);
+                final cartVM = context.read<CartViewModel>();
+                cartVM.addToCart(product, _quantity);
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
