@@ -72,13 +72,7 @@ class MyApp extends StatelessWidget {
           }
 
           if (auth.isSignedIn) {
-            // Load data when user signs in
-            context.read<ProfileViewModel>().loadProfile();
-            context.read<FavoritesViewModel>().loadFavorites();
-            context.read<CartViewModel>().loadCart();
-            context.read<OrdersViewModel>().loadOrders();
-            
-            return const AppShell(key: ValueKey('shell'));
+            return const _AppLoader();
           } else {
             return WelcomeView(
               key: const ValueKey('welcome'),
@@ -89,5 +83,37 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+class _AppLoader extends StatefulWidget {
+  const _AppLoader();
+
+  @override
+  State<_AppLoader> createState() => _AppLoaderState();
+}
+
+class _AppLoaderState extends State<_AppLoader> {
+  bool _loaded = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_loaded) {
+      _loaded = true;
+
+      Future.microtask(() {
+        context.read<ProfileViewModel>().loadProfile();
+        context.read<FavoritesViewModel>().loadFavorites();
+        context.read<CartViewModel>().loadCart();
+        context.read<OrdersViewModel>().loadOrders();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppShell(key: ValueKey('shell'));
   }
 }

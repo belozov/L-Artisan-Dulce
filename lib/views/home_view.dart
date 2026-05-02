@@ -8,6 +8,7 @@ import '../viewmodels/profile_viewmodel.dart';
 import '../viewmodels/navigation_viewmodel.dart';
 import '../viewmodels/cart_viewmodel.dart';
 import 'detail_view.dart';
+import 'dart:io';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -134,23 +135,42 @@ class HomeView extends StatelessWidget {
           ),
           TactileWrapper(
             onTap: () => navVM.switchTab(3),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  profileVM.userInitials,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.background,
+            child: Consumer<ProfileViewModel>(
+              builder: (context, profileVM, _) {
+                debugPrint('HOME PHOTO PATH: ${profileVM.profilePhotoPath}');
+
+                final hasPhoto =
+                    profileVM.profilePhotoPath.isNotEmpty &&
+                    File(profileVM.profilePhotoPath).existsSync();
+
+                return Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.accent,
+                    shape: BoxShape.circle,
                   ),
-                ),
-              ),
+                  clipBehavior: Clip.antiAlias,
+                  child: hasPhoto
+                      ? Image.file(
+                          File(profileVM.profilePhotoPath),
+                          key: ValueKey(profileVM.profilePhotoPath),
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                        )
+                      : Center(
+                          child: Text(
+                            profileVM.userInitials,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.background,
+                            ),
+                          ),
+                        ),
+                );
+              },
             ),
           ),
         ],

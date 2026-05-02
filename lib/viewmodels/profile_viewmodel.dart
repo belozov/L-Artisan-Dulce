@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -42,7 +44,12 @@ class ProfileViewModel extends ChangeNotifier {
       final data = doc.data()!;
       _userName = data['name'] ?? user.displayName ?? 'User';
       _userEmail = data['email'] ?? user.email ?? '';
-      _profilePhotoPath = data['photoUrl'] ?? '';
+      final savedPhoto = data['photoUrl'];
+      if (savedPhoto != null &&
+          savedPhoto.toString().isNotEmpty &&
+          File(savedPhoto.toString()).existsSync()) {
+        _profilePhotoPath = savedPhoto.toString();
+      }
       _deliveryAddress = data['deliveryAddress'] ?? '';
       _notificationsEnabled = data['notificationsEnabled'] ?? true;
       _paymentLast4 = data['paymentLast4'] ?? '4829';
@@ -90,15 +97,23 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> setProfilePhoto(String path) async {
-    _profilePhotoPath = path;
     final user = _auth.currentUser;
-    if (user != null) {
-      await _db.collection('users').doc(user.uid).update({
-        'photoUrl': path,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    }
+    if (user == null) return;
+
+    final dir = await getApplicationDocumentsDirectory();
+
+    final fileName =
+        'profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    final savedFile = await File(path).copy('${dir.path}/$fileName');
+
+    _profilePhotoPath = savedFile.path;
     notifyListeners();
+
+    await _db.collection('users').doc(user.uid).set({
+      'photoUrl': savedFile.path,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> removeProfilePhoto() async {
@@ -138,7 +153,10 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updatePayment({required String last4, required String brand}) async {
+  Future<void> updatePayment({
+    required String last4,
+    required String brand,
+  }) async {
     _paymentLast4 = last4;
     _paymentBrand = brand;
     final user = _auth.currentUser;
