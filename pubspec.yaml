@@ -19,6 +19,7 @@ dependencies:
   cloud_firestore: ^6.1.0
   provider: ^6.1.5+1
   firebase_messaging: ^16.2.0
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +43,12 @@ flutter:
           weight: 400
         - asset: fonts/Poppins-SemiBold.ttf
           weight: 600
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  image_path: "assets/icon.png"
