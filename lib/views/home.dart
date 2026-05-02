@@ -108,7 +108,7 @@ class SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: const Color(0xff1D1617).withOpacity(0.5),
+            color: const Color(0xff1D1617).withValues(alpha: 0.5),
             spreadRadius: 0,
             blurRadius: 40,
           ),
@@ -189,7 +189,7 @@ class CategoriesSection extends StatelessWidget {
             itemCount: categories.length,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            separatorBuilder: (_, __) => const SizedBox(width: 25),
+            separatorBuilder: (_, _) => const SizedBox(width: 25),
             itemBuilder: (context, index) {
               final category = categories[index];
 
@@ -215,7 +215,7 @@ class CategoryCard extends StatelessWidget {
     return Container(
       width: 100,
       decoration: BoxDecoration(
-        color: category.boxColor.withOpacity(0.3),
+        color: category.boxColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -276,7 +276,7 @@ class DietSection extends StatelessWidget {
             itemCount: diets.length,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            separatorBuilder: (_, __) => const SizedBox(width: 25),
+            separatorBuilder: (_, _) => const SizedBox(width: 25),
             itemBuilder: (context, index) {
               final diet = diets[index];
 
@@ -303,7 +303,7 @@ class DietCard extends StatelessWidget {
       width: 210,
       height: 240,
       decoration: BoxDecoration(
-        color: diet.boxColor.withOpacity(0.3),
+        color: diet.boxColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -399,7 +399,7 @@ class PopularDietSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverList.separated(
             itemCount: popularDiets.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 25),
+            separatorBuilder: (_, _) => const SizedBox(height: 25),
             itemBuilder: (context, index) {
               final popularDiet = popularDiets[index];
 
@@ -430,7 +430,7 @@ class PopularDietCard extends StatelessWidget {
         boxShadow: popularDiet.boxIsSelected
             ? [
           BoxShadow(
-            color: const Color(0xff1D1617).withOpacity(0.07),
+            color: const Color(0xff1D1617).withValues(alpha: 0.07),
             blurRadius: 40,
             spreadRadius: 0,
             offset: const Offset(0, 10),

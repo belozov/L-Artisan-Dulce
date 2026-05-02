@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../models/product_model.dart';
-import '../state/app_state.dart';
+
 import '../theme/app_colors.dart';
 import '../widgets/tactile_wrapper.dart';
+
+import '../viewmodels/navigation_viewmodel.dart';
+import '../viewmodels/cart_viewmodel.dart';
+import '../viewmodels/orders_viewmodel.dart';
+import '../viewmodels/products_viewmodel.dart';
 
 import 'detail_view.dart';
 import 'explore_view.dart';
@@ -17,17 +22,17 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
-    final currentIndex = state.currentTabIndex;
+    final navVM = context.watch<NavigationViewModel>();
+    final currentIndex = navVM.currentTabIndex;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: currentIndex == 0 ? null : _buildAppBar(context, state),
+      appBar: currentIndex == 0 ? null : _buildAppBar(context),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _buildPage(currentIndex),
       ),
-      bottomNavigationBar: _buildBottomNav(context, state, currentIndex),
+      bottomNavigationBar: _buildBottomNav(context, currentIndex),
     );
   }
 
@@ -46,7 +51,10 @@ class AppShell extends StatelessWidget {
     }
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, AppState state) {
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final navVM = context.read<NavigationViewModel>();
+    final cartVM = context.watch<CartViewModel>();
+
     return AppBar(
       backgroundColor: AppColors.background,
       elevation: 0,
@@ -54,7 +62,7 @@ class AppShell extends StatelessWidget {
       leading: Padding(
         padding: const EdgeInsets.all(8),
         child: TactileWrapper(
-          onTap: () => _showSearch(context, state),
+          onTap: () => _showSearch(context),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.lightPink.withValues(alpha: 0.5),
@@ -69,7 +77,7 @@ class AppShell extends StatelessWidget {
         ),
       ),
       title: TactileWrapper(
-        onTap: () => state.switchTab(0),
+        onTap: () => navVM.switchTab(0),
         child: const Text(
           "L'Artisan Dulce",
           style: TextStyle(
@@ -84,7 +92,7 @@ class AppShell extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: TactileWrapper(
-            onTap: () => _showCart(context, state),
+            onTap: () => _showCart(context),
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -101,7 +109,7 @@ class AppShell extends StatelessWidget {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (state.cartItemCount > 0)
+                if (cartVM.cartItemCount > 0)
                   Positioned(
                     top: 2,
                     right: 2,
@@ -112,7 +120,7 @@ class AppShell extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Text(
-                        '${state.cartItemCount}',
+                        '${cartVM.cartItemCount}',
                         style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w800,
@@ -129,16 +137,16 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  void _showSearch(BuildContext context, AppState state) {
+  void _showSearch(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SearchSheet(state: state),
+      builder: (_) => const _SearchSheet(),
     );
   }
 
-  void _showCart(BuildContext context, AppState state) {
+  void _showCart(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -147,7 +155,10 @@ class AppShell extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) {
-        final items = state.cartItems;
+        final cartVM = context.watch<CartViewModel>();
+        final items = cartVM.cartItems;
+        // Assume payment profile info will be loaded separately or is static
+        final paymentDisplay = 'Visa •••• 4829';
 
         return SafeArea(
           child: SingleChildScrollView(
@@ -234,7 +245,7 @@ class AppShell extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        '\$${state.cartTotal.toStringAsFixed(2)}',
+                        '\$${cartVM.cartTotal.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
@@ -291,7 +302,7 @@ class AppShell extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  state.paymentDisplay,
+                                  paymentDisplay,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
@@ -315,9 +326,11 @@ class AppShell extends StatelessWidget {
 
                   TactileWrapper(
                     onTap: () async {
-                      Navigator.pop(ctx);
+                      final navVM = context.read<NavigationViewModel>();
+                      final ordersVM = context.read<OrdersViewModel>();
 
-                      await state.createOrder();
+                      Navigator.pop(ctx);
+                      await cartVM.createOrder(ordersVM, navVM);
 
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).clearSnackBars();
@@ -370,7 +383,6 @@ class AppShell extends StatelessWidget {
 
   Widget _buildBottomNav(
     BuildContext context,
-    AppState state,
     int currentIndex,
   ) {
     const items = [
@@ -391,6 +403,9 @@ class AppShell extends StatelessWidget {
         label: 'Profile',
       ),
     ];
+
+    final navVM = context.read<NavigationViewModel>();
+    final ordersVM = context.watch<OrdersViewModel>();
 
     return Container(
       decoration: BoxDecoration(
@@ -414,7 +429,7 @@ class AppShell extends StatelessWidget {
               final isActive = currentIndex == i;
 
               return TactileWrapper(
-                onTap: () => state.switchTab(i),
+                onTap: () => navVM.switchTab(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 250),
                   padding: const EdgeInsets.symmetric(
@@ -440,7 +455,7 @@ class AppShell extends StatelessWidget {
                                 ? AppColors.navActive
                                 : AppColors.navInactive,
                           ),
-                          if (i == 2 && state.activeOrders.isNotEmpty)
+                          if (i == 2 && ordersVM.activeOrders.isNotEmpty)
                             Positioned(
                               top: -4,
                               right: -8,
@@ -451,7 +466,7 @@ class AppShell extends StatelessWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Text(
-                                  '${state.activeOrders.length}',
+                                  '${ordersVM.activeOrders.length}',
                                   style: const TextStyle(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w700,
@@ -488,9 +503,7 @@ class AppShell extends StatelessWidget {
 }
 
 class _SearchSheet extends StatefulWidget {
-  final AppState state;
-
-  const _SearchSheet({required this.state});
+  const _SearchSheet();
 
   @override
   State<_SearchSheet> createState() => _SearchSheetState();
@@ -498,7 +511,6 @@ class _SearchSheet extends StatefulWidget {
 
 class _SearchSheetState extends State<_SearchSheet> {
   final _controller = TextEditingController();
-  List<Product> _results = [];
 
   @override
   void dispose() {
@@ -506,15 +518,11 @@ class _SearchSheetState extends State<_SearchSheet> {
     super.dispose();
   }
 
-  void _search(String query) {
-    widget.state.setSearchQuery(query);
-    setState(() {
-      _results = widget.state.searchResults;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final productsVM = context.watch<ProductsViewModel>();
+    final results = productsVM.searchResults;
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: const BoxDecoration(
@@ -537,7 +545,7 @@ class _SearchSheetState extends State<_SearchSheet> {
             TextField(
               controller: _controller,
               autofocus: true,
-              onChanged: _search,
+              onChanged: (query) => productsVM.setSearchQuery(query),
               decoration: InputDecoration(
                 hintText: 'Search desserts...',
                 hintStyle: const TextStyle(color: AppColors.textTertiary),
@@ -550,7 +558,7 @@ class _SearchSheetState extends State<_SearchSheet> {
                         icon: const Icon(Icons.close, size: 20),
                         onPressed: () {
                           _controller.clear();
-                          _search('');
+                          productsVM.setSearchQuery('');
                         },
                       )
                     : null,
@@ -564,7 +572,7 @@ class _SearchSheetState extends State<_SearchSheet> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: _results.isEmpty
+              child: results.isEmpty
                   ? Center(
                       child: Text(
                         _controller.text.isEmpty
@@ -574,16 +582,15 @@ class _SearchSheetState extends State<_SearchSheet> {
                       ),
                     )
                   : ListView.separated(
-                      itemCount: _results.length,
-                      separatorBuilder: (_, _a) =>
+                      itemCount: results.length,
+                      separatorBuilder: (_, a) =>
                           const Divider(height: 1, color: AppColors.divider),
                       itemBuilder: (context, index) {
-                        final product = _results[index];
+                        final product = results[index];
 
                         return TactileWrapper(
                           onTap: () {
                             Navigator.pop(context);
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -602,7 +609,7 @@ class _SearchSheetState extends State<_SearchSheet> {
                                     width: 50,
                                     height: 50,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, _a, _b) => Container(
+                                    errorBuilder: (_, a, b) => Container(
                                       width: 50,
                                       height: 50,
                                       color: AppColors.lightPink,

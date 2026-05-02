@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../models/product_model.dart';
-import '../state/app_state.dart';
+import '../viewmodels/products_viewmodel.dart';
+import '../viewmodels/favorites_viewmodel.dart';
+import '../viewmodels/cart_viewmodel.dart';
 import '../widgets/tactile_wrapper.dart';
 import 'detail_view.dart';
 
@@ -10,13 +13,13 @@ class ExploreView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
-    final products = state.filteredExploreProducts;
+    final productsVM = context.watch<ProductsViewModel>();
+    final products = productsVM.filteredExploreProducts;
 
     return CustomScrollView(
       slivers: [
         // ── Filter Chips ──
-        SliverToBoxAdapter(child: _buildFilterChips(context, state)),
+        SliverToBoxAdapter(child: _buildFilterChips(context, productsVM)),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
         // ── Product Grid ──
         products.isEmpty
@@ -48,24 +51,24 @@ class ExploreView extends StatelessWidget {
               ),
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
         // ── Artisan Bundles ──
-        SliverToBoxAdapter(child: _buildBundlesSection(context, state)),
+        SliverToBoxAdapter(child: _buildBundlesSection(context)),
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
     );
   }
 
-  Widget _buildFilterChips(BuildContext context, AppState state) {
+  Widget _buildFilterChips(BuildContext context, ProductsViewModel productsVM) {
     return SizedBox(
       height: 56,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         itemCount: kFilterChips.length,
-        separatorBuilder: (_, _a) => const SizedBox(width: 10),
+        separatorBuilder: (_, a) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          final isSelected = state.selectedChipIndex == index;
+          final isSelected = productsVM.selectedChipIndex == index;
           return TactileWrapper(
-            onTap: () => state.selectChip(index),
+            onTap: () => productsVM.selectChip(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -91,7 +94,7 @@ class ExploreView extends StatelessWidget {
     );
   }
 
-  Widget _buildBundlesSection(BuildContext context, AppState state) {
+  Widget _buildBundlesSection(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -246,8 +249,9 @@ class _ExploreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
-    final isFav = state.isFavorite(product.id);
+    final favVM = context.watch<FavoritesViewModel>();
+    final cartVM = context.read<CartViewModel>();
+    final isFav = favVM.isFavorite(product.id);
 
     return TactileWrapper(
       onTap: () {
@@ -256,8 +260,8 @@ class _ExploreCard extends StatelessWidget {
           PageRouteBuilder(
             transitionDuration: const Duration(milliseconds: 400),
             reverseTransitionDuration: const Duration(milliseconds: 350),
-            pageBuilder: (_, _a, _b) => DetailView(product: product),
-            transitionsBuilder: (_, animation, _a2, child) {
+            pageBuilder: (_, a, b) => DetailView(product: product),
+            transitionsBuilder: (_, animation, a2, child) {
               return FadeTransition(opacity: animation, child: child);
             },
           ),
@@ -286,7 +290,7 @@ class _ExploreCard extends StatelessWidget {
                         product.imageUrl,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _a, _b) => Container(
+                        errorBuilder: (_, a, b) => Container(
                           color: AppColors.lightPink,
                           child: const Center(child: Icon(Icons.cake, color: AppColors.accentPink, size: 40)),
                         ),
@@ -298,7 +302,7 @@ class _ExploreCard extends StatelessWidget {
                     right: 10,
                     child: TactileWrapper(
                       onTap: () {
-                        state.toggleFavorite(product.id);
+                        favVM.toggleFavorite(product.id);
                         if (!isFav) {
                           ScaffoldMessenger.of(context).clearSnackBars();
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +358,7 @@ class _ExploreCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     _OrderNowButton(
                       onTap: () {
-                        state.addToCart(product, 1);
+                        cartVM.addToCart(product, 1);
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

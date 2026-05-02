@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../models/product_model.dart';
-import '../state/app_state.dart';
 import '../widgets/tactile_wrapper.dart';
+import '../viewmodels/favorites_viewmodel.dart';
+import '../viewmodels/navigation_viewmodel.dart';
 import 'detail_view.dart';
 
 class FavoritesView extends StatelessWidget {
@@ -10,8 +12,8 @@ class FavoritesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
-    final favorites = state.favoriteProducts;
+    final favVM = context.watch<FavoritesViewModel>();
+    final favorites = favVM.favoriteProducts;
 
     if (favorites.isEmpty) {
       return Center(
@@ -28,7 +30,9 @@ class FavoritesView extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: AppColors.textTertiary)),
             const SizedBox(height: 24),
             TactileWrapper(
-              onTap: () => state.switchTab(1),
+              onTap: () {
+                context.read<NavigationViewModel>().switchTab(1);
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
@@ -48,7 +52,7 @@ class FavoritesView extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: favorites.length,
-      separatorBuilder: (_, _a) => const SizedBox(height: 16),
+      separatorBuilder: (_, a) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final product = favorites[index];
         return _FavoriteCard(product: product);
@@ -63,7 +67,7 @@ class _FavoriteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = AppStateProvider.of(context);
+    final favVM = context.read<FavoritesViewModel>();
 
     return TactileWrapper(
       onTap: () {
@@ -88,7 +92,7 @@ class _FavoriteCard extends StatelessWidget {
               child: Image.network(
                 product.imageUrl,
                 width: 80, height: 80, fit: BoxFit.cover,
-                errorBuilder: (_, _a, _b) => Container(
+                errorBuilder: (_, a, b) => Container(
                   width: 80, height: 80,
                   decoration: BoxDecoration(color: AppColors.lightPink, borderRadius: BorderRadius.circular(16)),
                   child: const Icon(Icons.cake, color: AppColors.accentPink),
@@ -119,7 +123,7 @@ class _FavoriteCard extends StatelessWidget {
             ),
             TactileWrapper(
               onTap: () {
-                state.toggleFavorite(product.id);
+                favVM.toggleFavorite(product.id);
                 ScaffoldMessenger.of(context).clearSnackBars();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -131,7 +135,7 @@ class _FavoriteCard extends StatelessWidget {
                     action: SnackBarAction(
                       label: 'UNDO',
                       textColor: AppColors.accentPink,
-                      onPressed: () => state.toggleFavorite(product.id),
+                      onPressed: () => favVM.toggleFavorite(product.id),
                     ),
                   ),
                 );
