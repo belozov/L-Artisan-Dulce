@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
-import '../services/product_repository.dart';
 
 class ProductsViewModel extends ChangeNotifier {
   int _selectedChipIndex = 0;

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 
-import 'pages/app_shell.dart';
-import 'pages/welcome_view.dart';
+import 'firebase_options.dart';
+import 'views/app_shell.dart';
+import 'views/welcome_view.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/cart_viewmodel.dart';
 import 'viewmodels/favorites_viewmodel.dart';
@@ -14,9 +15,16 @@ import 'viewmodels/orders_viewmodel.dart';
 import 'viewmodels/products_viewmodel.dart';
 import 'viewmodels/profile_viewmodel.dart';
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
