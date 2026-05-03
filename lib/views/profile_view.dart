@@ -9,6 +9,7 @@ import '../viewmodels/favorites_viewmodel.dart';
 import '../viewmodels/navigation_viewmodel.dart';
 import '../viewmodels/orders_viewmodel.dart';
 import '../viewmodels/profile_viewmodel.dart';
+import '../widgets/fade_slide_animation.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/tactile_wrapper.dart';
@@ -31,115 +32,131 @@ class ProfileView extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 24),
-          _buildHeader(context),
-          const SizedBox(height: 24),
-          _buildStats(context),
-          const SizedBox(height: 24),
 
-          _section('My Orders', [
-            _item(
-              Icons.shopping_bag_outlined,
-              'Active Orders',
-              trailing: ordersVM.activeOrders.isNotEmpty
-                  ? _badge('${ordersVM.activeOrders.length}')
-                  : null,
-              onTap: () => navVM.switchTab(2),
-            ),
-            _item(
-              Icons.history,
-              'Order History',
-              onTap: () => navVM.switchTab(2),
-            ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section('Preferences', [
-            _item(
-              Icons.favorite_border,
-              'Favorites',
-              trailing: favVM.favoriteCount > 0
-                  ? _badge('${favVM.favoriteCount}')
-                  : null,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FavoritesPage()),
-                );
-              },
-            ),
-            _item(
-              Icons.location_on_outlined,
-              'Delivery Address',
-              subtitle: profileVM.deliveryAddress,
-              onTap: () => _editAddress(context),
-            ),
-            _item(
-              Icons.credit_card_outlined,
-              'Payment Methods',
-              subtitle: profileVM.paymentDisplay,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PaymentPage()),
-                );
-              },
-            ),
-            _item(
-              Icons.notifications_none,
-              'Notifications',
-              trailing: _toggle(profileVM.notificationsEnabled),
-              onTap: () {
-                profileVM.toggleNotifications();
-                _snack(
-                  context,
-                  'Notifications ${profileVM.notificationsEnabled ? 'enabled' : 'disabled'}',
-                );
-              },
-            ),
-          ]),
-
-          const SizedBox(height: 16),
-
-          _section('About', [
-            _item(
-              Icons.info_outline,
-              "About L'Artisan Dulce",
-              onTap: () => _showAbout(context),
-            ),
-            _item(
-              Icons.help_outline,
-              'Help & Support',
-              onTap: () => _showHelp(context),
-            ),
-            _item(
-              Icons.star_border,
-              'Rate the App',
-              onTap: () => _showRating(context),
-            ),
-          ]),
+          FadeSlideAnimation(index: 0, child: _buildHeader(context)),
 
           const SizedBox(height: 24),
 
-          TactileWrapper(
-            onTap: () => _confirmSignOut(context),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.heartRed.withValues(alpha: 0.3),
-                ),
+          FadeSlideAnimation(index: 1, child: _buildStats(context)),
+
+          const SizedBox(height: 24),
+
+          FadeSlideAnimation(
+            index: 2,
+            child: _section('My Orders', [
+              _item(
+                Icons.shopping_bag_outlined,
+                'Active Orders',
+                trailing: ordersVM.activeOrders.isNotEmpty
+                    ? _badge('${ordersVM.activeOrders.length}')
+                    : null,
+                onTap: () => navVM.switchTab(2),
               ),
-              child: const Center(
-                child: Text(
-                  'Sign Out',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.heartRed,
+              _item(
+                Icons.history,
+                'Order History',
+                onTap: () => navVM.switchTab(2),
+              ),
+            ]),
+          ),
+
+          const SizedBox(height: 16),
+
+          FadeSlideAnimation(
+            index: 3,
+            child: _section('Preferences', [
+              _item(
+                Icons.favorite_border,
+                'Favorites',
+                trailing: favVM.favoriteCount > 0
+                    ? _badge('${favVM.favoriteCount}')
+                    : null,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FavoritesPage()),
+                  );
+                },
+              ),
+              _item(
+                Icons.location_on_outlined,
+                'Delivery Address',
+                subtitle: profileVM.deliveryAddress,
+                onTap: () => _editAddress(context),
+              ),
+              _item(
+                Icons.credit_card_outlined,
+                'Payment Methods',
+                subtitle: profileVM.paymentDisplay,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PaymentPage()),
+                  );
+                },
+              ),
+              _item(
+                Icons.notifications_none,
+                'Notifications',
+                trailing: _toggle(profileVM.notificationsEnabled),
+                onTap: () {
+                  profileVM.toggleNotifications();
+                  _snack(
+                    context,
+                    'Notifications ${profileVM.notificationsEnabled ? 'enabled' : 'disabled'}',
+                  );
+                },
+              ),
+            ]),
+          ),
+
+          const SizedBox(height: 16),
+
+          FadeSlideAnimation(
+            index: 4,
+            child: _section('About', [
+              _item(
+                Icons.info_outline,
+                "About L'Artisan Dulce",
+                onTap: () => _showAbout(context),
+              ),
+              _item(
+                Icons.help_outline,
+                'Help & Support',
+                onTap: () => _showHelp(context),
+              ),
+              _item(
+                Icons.star_border,
+                'Rate the App',
+                onTap: () => _showRating(context),
+              ),
+            ]),
+          ),
+
+          const SizedBox(height: 24),
+
+          FadeSlideAnimation(
+            index: 5,
+            child: TactileWrapper(
+              onTap: () => _confirmSignOut(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.heartRed.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.heartRed,
+                    ),
                   ),
                 ),
               ),
