@@ -1,14 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../theme/app_colors.dart';
 import '../models/product_model.dart';
 import '../widgets/tactile_wrapper.dart';
+import '../widgets/fade_slide_animation.dart';
 import '../viewmodels/products_viewmodel.dart';
 import '../viewmodels/profile_viewmodel.dart';
 import '../viewmodels/navigation_viewmodel.dart';
 import '../viewmodels/cart_viewmodel.dart';
+import '../utils/responsive.dart';
 import 'detail_view.dart';
-import 'dart:io';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -32,6 +35,7 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productsVM = context.watch<ProductsViewModel>();
+
     final products = productsVM.selectedChipIndex == 0
         ? [...kPopularDesserts, ...kExploreProducts]
         : [...kPopularDesserts, ...kExploreProducts]
@@ -42,7 +46,6 @@ class HomeView extends StatelessWidget {
               )
               .toList();
 
-    // Deduplicate
     final seen = <String>{};
     final deduplicated = products.where((p) {
       if (seen.contains(p.id)) return false;
@@ -52,21 +55,34 @@ class HomeView extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        // Header
-        SliverToBoxAdapter(child: _buildHeader(context)),
-        // Search
-        SliverToBoxAdapter(child: _buildSearchBar(context)),
+        SliverToBoxAdapter(
+          child: FadeSlideAnimation(index: 0, child: _buildHeader(context)),
+        ),
+        SliverToBoxAdapter(
+          child: FadeSlideAnimation(index: 1, child: _buildSearchBar(context)),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
-        // Categories
-        SliverToBoxAdapter(child: _buildCategories(productsVM)),
+        SliverToBoxAdapter(
+          child: FadeSlideAnimation(
+            index: 2,
+            child: _buildCategories(context, productsVM),
+          ),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
-        // Promo banner
-        SliverToBoxAdapter(child: _buildPromoBanner(context)),
+        SliverToBoxAdapter(
+          child: FadeSlideAnimation(
+            index: 3,
+            child: _buildPromoBanner(context),
+          ),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        // Popular picks header
-        SliverToBoxAdapter(child: _buildPopularHeader(context)),
+        SliverToBoxAdapter(
+          child: FadeSlideAnimation(
+            index: 4,
+            child: _buildPopularHeader(context),
+          ),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        // Grid
         deduplicated.isEmpty
             ? const SliverToBoxAdapter(
                 child: Padding(
@@ -80,18 +96,23 @@ class HomeView extends StatelessWidget {
                 ),
               )
             : SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(
+                  horizontal: Responsive.horizontalPadding(context),
+                ),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.95,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: Responsive.productGridCount(context),
+                    mainAxisSpacing: Responsive.cardSpacing(context),
+                    crossAxisSpacing: Responsive.cardSpacing(context),
+                    childAspectRatio: Responsive.productAspectRatio(context),
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, i) => _ProductCard(
-                      product: deduplicated[i],
-                      bgColor: _cardColors[i % _cardColors.length],
+                    (context, i) => FadeSlideAnimation(
+                      index: i,
+                      child: _ProductCard(
+                        product: deduplicated[i],
+                        bgColor: _cardColors[i % _cardColors.length],
+                      ),
                     ),
                     childCount: deduplicated.length,
                   ),
@@ -105,9 +126,15 @@ class HomeView extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     final profileVM = context.watch<ProfileViewModel>();
     final navVM = context.read<NavigationViewModel>();
+    final avatarSize = Responsive.avatarSize(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      padding: EdgeInsets.fromLTRB(
+        Responsive.horizontalPadding(context),
+        20,
+        Responsive.horizontalPadding(context),
+        16,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -124,8 +151,8 @@ class HomeView extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${profileVM.userName} 🍬',
-                  style: const TextStyle(
-                    fontSize: 26,
+                  style: TextStyle(
+                    fontSize: Responsive.titleFontSize(context),
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
@@ -137,15 +164,13 @@ class HomeView extends StatelessWidget {
             onTap: () => navVM.switchTab(3),
             child: Consumer<ProfileViewModel>(
               builder: (context, profileVM, _) {
-                debugPrint('HOME PHOTO PATH: ${profileVM.profilePhotoPath}');
-
                 final hasPhoto =
                     profileVM.profilePhotoPath.isNotEmpty &&
                     File(profileVM.profilePhotoPath).existsSync();
 
                 return Container(
-                  width: 44,
-                  height: 44,
+                  width: avatarSize,
+                  height: avatarSize,
                   decoration: const BoxDecoration(
                     color: AppColors.accent,
                     shape: BoxShape.circle,
@@ -155,8 +180,8 @@ class HomeView extends StatelessWidget {
                       ? Image.file(
                           File(profileVM.profilePhotoPath),
                           key: ValueKey(profileVM.profilePhotoPath),
-                          width: 44,
-                          height: 44,
+                          width: avatarSize,
+                          height: avatarSize,
                           fit: BoxFit.cover,
                         )
                       : Center(
@@ -180,7 +205,9 @@ class HomeView extends StatelessWidget {
 
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+      ),
       child: TactileWrapper(
         onTap: () {
           showModalBottomSheet(
@@ -211,16 +238,18 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildCategories(ProductsViewModel productsVM) {
+  Widget _buildCategories(BuildContext context, ProductsViewModel productsVM) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
+        Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: Responsive.horizontalPadding(context),
+          ),
           child: Text(
             'Categories',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: Responsive.sectionTitleFontSize(context),
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
@@ -231,7 +260,9 @@ class HomeView extends StatelessWidget {
           height: 38,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: Responsive.horizontalPadding(context),
+            ),
             itemCount: kFilterChips.length,
             separatorBuilder: (_, a) => const SizedBox(width: 10),
             itemBuilder: (_, i) {
@@ -274,7 +305,9 @@ class HomeView extends StatelessWidget {
 
   Widget _buildPromoBanner(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+      ),
       child: TactileWrapper(
         onTap: () {
           ScaffoldMessenger.of(context).clearSnackBars();
@@ -366,14 +399,16 @@ class HomeView extends StatelessWidget {
 
   Widget _buildPopularHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(
+        horizontal: Responsive.horizontalPadding(context),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Popular picks',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: Responsive.sectionTitleFontSize(context) + 2,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
@@ -400,11 +435,10 @@ class HomeView extends StatelessWidget {
   }
 }
 
-// ── Product Card ──
-
 class _ProductCard extends StatelessWidget {
   final Product product;
   final Color bgColor;
+
   const _ProductCard({required this.product, required this.bgColor});
 
   @override
@@ -432,7 +466,6 @@ class _ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image area
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -462,7 +495,6 @@ class _ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Info area
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
               child: Row(
@@ -555,10 +587,9 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-// ── Quick Search (reused from app_shell pattern) ──
-
 class _QuickSearch extends StatefulWidget {
   const _QuickSearch();
+
   @override
   State<_QuickSearch> createState() => _QuickSearchState();
 }
@@ -584,7 +615,12 @@ class _QuickSearchState extends State<_QuickSearch> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        padding: EdgeInsets.fromLTRB(
+          Responsive.horizontalPadding(context),
+          16,
+          Responsive.horizontalPadding(context),
+          0,
+        ),
         child: Column(
           children: [
             Container(
@@ -644,71 +680,74 @@ class _QuickSearchState extends State<_QuickSearch> {
                           const Divider(height: 1, color: AppColors.divider),
                       itemBuilder: (_, i) {
                         final p = results[i];
-                        return TactileWrapper(
-                          onTap: () {
-                            Navigator.pop(context);
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DetailView(product: p),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.network(
-                                    p.imageUrl,
-                                    width: 44,
-                                    height: 44,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, a, b) => Container(
+                        return FadeSlideAnimation(
+                          index: i,
+                          child: TactileWrapper(
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DetailView(product: p),
+                                ),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.network(
+                                      p.imageUrl,
                                       width: 44,
                                       height: 44,
-                                      color: AppColors.background,
-                                      child: const Icon(
-                                        Icons.cake,
-                                        color: AppColors.accent,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, a, b) => Container(
+                                        width: 44,
+                                        height: 44,
+                                        color: AppColors.background,
+                                        child: const Icon(
+                                          Icons.cake,
+                                          color: AppColors.accent,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p.name,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          p.name,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textPrimary,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        p.category,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: AppColors.textSecondary,
+                                        Text(
+                                          p.category,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.textSecondary,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  '\$${p.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
+                                  Text(
+                                    '\$${p.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         );
