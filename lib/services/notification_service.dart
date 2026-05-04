@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationService {
   NotificationService._();
@@ -26,20 +27,20 @@ class NotificationService {
 
   static Future<void> _saveCurrentToken() async {
     final token = await _messaging.getToken();
-    print('FCM TOKEN: $token');
+    debugPrint('FCM TOKEN: $token');
     await _saveTokenToFirestore(token);
   }
 
   static void _listenTokenRefresh() {
     FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-      print('NEW FCM TOKEN: $newToken');
+      debugPrint('NEW FCM TOKEN: $newToken');
       await _saveTokenToFirestore(newToken);
     });
   }
 
   static void _listenForegroundMessages() {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('FCM MESSAGE: ${message.notification?.title}');
+      debugPrint('FCM MESSAGE: ${message.notification?.title}');
     });
   }
 
@@ -62,6 +63,6 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    print('NOTIFICATION: $title - $body');
+    debugPrint('NOTIFICATION: $title - $body');
   }
 }

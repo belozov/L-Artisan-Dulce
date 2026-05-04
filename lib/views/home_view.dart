@@ -36,90 +36,140 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final productsVM = context.watch<ProductsViewModel>();
 
-    final products = productsVM.selectedChipIndex == 0
-        ? [...kPopularDesserts, ...kExploreProducts]
-        : [...kPopularDesserts, ...kExploreProducts]
-              .where(
-                (p) =>
-                    p.category.toLowerCase() ==
-                    kFilterChips[productsVM.selectedChipIndex].toLowerCase(),
-              )
-              .toList();
+    final deduplicated = productsVM.filteredExploreProducts;
 
-    final seen = <String>{};
-    final deduplicated = products.where((p) {
-      if (seen.contains(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    }).toList();
-
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: FadeSlideAnimation(index: 0, child: _buildHeader(context)),
-        ),
-        SliverToBoxAdapter(
-          child: FadeSlideAnimation(index: 1, child: _buildSearchBar(context)),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
-        SliverToBoxAdapter(
-          child: FadeSlideAnimation(
-            index: 2,
-            child: _buildCategories(context, productsVM),
+    return RefreshIndicator(
+      color: AppColors.accent,
+      backgroundColor: AppColors.surface,
+      onRefresh: productsVM.refresh,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: FadeSlideAnimation(index: 0, child: _buildHeader(context)),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
-        SliverToBoxAdapter(
-          child: FadeSlideAnimation(
-            index: 3,
-            child: _buildPromoBanner(context),
+          SliverToBoxAdapter(
+            child: FadeSlideAnimation(index: 1, child: _buildSearchBar(context)),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        SliverToBoxAdapter(
-          child: FadeSlideAnimation(
-            index: 4,
-            child: _buildPopularHeader(context),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          SliverToBoxAdapter(
+            child: FadeSlideAnimation(
+              index: 2,
+              child: _buildCategories(context, productsVM),
+            ),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        deduplicated.isEmpty
-            ? const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text(
-                      'No items in this category',
-                      style: TextStyle(color: AppColors.textTertiary),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          SliverToBoxAdapter(
+            child: FadeSlideAnimation(
+              index: 3,
+              child: _buildPromoBanner(context),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          SliverToBoxAdapter(
+            child: FadeSlideAnimation(
+              index: 4,
+              child: _buildPopularHeader(context),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          // ── Error banner ─────────────────────────────────────────────────
+          if (productsVM.hasError)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.redAccent.withValues(alpha: 0.4),
                     ),
                   ),
-                ),
-              )
-            : SliverPadding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: Responsive.horizontalPadding(context),
-                ),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: Responsive.productGridCount(context),
-                    mainAxisSpacing: Responsive.cardSpacing(context),
-                    crossAxisSpacing: Responsive.cardSpacing(context),
-                    childAspectRatio: Responsive.productAspectRatio(context),
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, i) => FadeSlideAnimation(
-                      index: i,
-                      child: _ProductCard(
-                        product: deduplicated[i],
-                        bgColor: _cardColors[i % _cardColors.length],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.wifi_off_rounded,
+                          color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          productsVM.errorMessage,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ),
-                    ),
-                    childCount: deduplicated.length,
+                      TextButton(
+                        onPressed: productsVM.loadDesserts,
+                        child: const Text('Retry',
+                            style: TextStyle(color: AppColors.accent)),
+                      ),
+                    ],
                   ),
                 ),
               ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
-      ],
+            ),
+          // ── Loading shimmer ───────────────────────────────────────────────
+          if (productsVM.isLoading)
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+              ),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: Responsive.productGridCount(context),
+                  mainAxisSpacing: Responsive.cardSpacing(context),
+                  crossAxisSpacing: Responsive.cardSpacing(context),
+                  childAspectRatio: Responsive.productAspectRatio(context),
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (_, i) => _ShimmerCard(key: ValueKey('shimmer_$i')),
+                  childCount: 6,
+                ),
+              ),
+            )
+          // ── Product grid ──────────────────────────────────────────────────
+          else if (deduplicated.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(
+                  child: Text(
+                    'No items in this category',
+                    style: TextStyle(color: AppColors.textTertiary),
+                  ),
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: Responsive.horizontalPadding(context),
+              ),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: Responsive.productGridCount(context),
+                  mainAxisSpacing: Responsive.cardSpacing(context),
+                  crossAxisSpacing: Responsive.cardSpacing(context),
+                  childAspectRatio: Responsive.productAspectRatio(context),
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => FadeSlideAnimation(
+                    index: i,
+                    child: _ProductCard(
+                      product: deduplicated[i],
+                      bgColor: _cardColors[i % _cardColors.length],
+                    ),
+                  ),
+                  childCount: deduplicated.length,
+                ),
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
+      ),
     );
   }
 
@@ -587,6 +637,92 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
+// ── Shimmer loading card ───────────────────────────────────────────────────
+
+class _ShimmerCard extends StatefulWidget {
+  const _ShimmerCard({super.key});
+
+  @override
+  State<_ShimmerCard> createState() => _ShimmerCardState();
+}
+
+class _ShimmerCardState extends State<_ShimmerCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.7).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, _) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.divider.withValues(alpha: _anim.value),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(18),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 12,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider.withValues(alpha: _anim.value),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 10,
+                    width: 60,
+                    decoration: BoxDecoration(
+                      color:
+                          AppColors.divider.withValues(alpha: _anim.value * 0.7),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _QuickSearch extends StatefulWidget {
   const _QuickSearch();
 
@@ -666,6 +802,29 @@ class _QuickSearchState extends State<_QuickSearch> {
               ),
             ),
             const SizedBox(height: 16),
+            // API searching indicator
+            if (productsVM.isSearching)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Searching online…',
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textTertiary),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: results.isEmpty
                   ? Center(

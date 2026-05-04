@@ -194,7 +194,7 @@ class ProfileViewModel extends ChangeNotifier {
       }
 
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
       final placemarks = await placemarkFromCoordinates(
