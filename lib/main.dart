@@ -104,10 +104,12 @@ class _AppLoaderState extends State<_AppLoader> {
       _loaded = true;
 
       Future.microtask(() {
+        if (!mounted) return;
         context.read<ProfileViewModel>().loadProfile();
         context.read<FavoritesViewModel>().loadFavorites();
         context.read<CartViewModel>().loadCart();
         context.read<OrdersViewModel>().loadOrders();
+        context.read<ProductsViewModel>().loadDesserts();
       });
     }
   }

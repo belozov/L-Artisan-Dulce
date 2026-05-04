@@ -206,7 +206,7 @@ class ProfileView extends StatelessWidget {
                         width: 96,
                         height: 96,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Center(
+                        errorBuilder: (_, _, _) => Center(
                           child: Text(
                             profileVM.userInitials,
                             style: const TextStyle(

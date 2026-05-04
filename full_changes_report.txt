@@ -1,0 +1,70 @@
+ПОЛНЫЙ ОТЧЕТ ОБ ИЗМЕНЕНИЯХ - L'ARTISAN DULCE
+==========================================
+Дата: 04.05.2026
+
+I. ИСПРАВЛЕНИЕ ОШИБОК АНАЛИЗАТОРА (28 проблем)
+----------------------------------------------
+
+1. Восстановление отсутствующих моделей:
+   - lib/models/category_model.dart: Создан файл с классом CategoryModel и статическим методом getCategory().
+   - lib/models/diet_model.dart: Создан файл с классом DietModel и статическим методом getDiets().
+   - lib/models/popular_model.dart: Создан файл с классом PopularDietModel и статическим методом getPopularDiets().
+   - Это устранило ошибки 'uri_does_not_exist', 'undefined_class' и 'undefined_identifier' в HomeView.
+
+2. Исправление асинхронного использования BuildContext (use_build_context_synchronously):
+   - lib/main.dart: Добавлена проверка 'if (!mounted) return;' перед использованием context внутри Future.microtask в _AppLoaderState.
+
+3. Исправление логов в продакшене (avoid_print):
+   - lib/services/notification_service.dart: Все вызовы print() заменены на debugPrint(). Добавлен импорт 'package:flutter/foundation.dart'.
+
+4. Обновление устаревших API (deprecated_member_use):
+   - lib/viewmodels/profile_viewmodel.dart: В Geolocator.getCurrentPosition заменен устаревший параметр 'desiredAccuracy' на 'locationSettings'.
+   - lib/views/home.dart: Все вызовы '.withOpacity()' заменены на современный '.withValues(alpha: ...)'.
+
+5. Исправление стиля кода (unnecessary_underscores):
+   - lib/views/profile_view.dart: В errorBuilder для Image.file заменены лишние подчеркивания (_, __, ___) на (_, _, _).
+
+
+II. ИНТЕГРАЦИЯ REAL-TIME FOOD API (TheMealDB)
+---------------------------------------------
+
+1. Обновление зависимостей:
+   - pubspec.yaml: Добавлен пакет 'http: ^1.2.2'.
+
+2. Новый сервис API:
+   - lib/services/meal_db_service.dart: Создан MealDbService для работы с TheMealDB API. 
+     - Реализован метод fetchDesserts() для получения списка десертов.
+     - Реализован метод searchDesserts() для живого поиска по базе API.
+     - Добавлен маппинг из JSON API в существующую модель Product.
+
+3. Обновление ViewModel:
+   - lib/viewmodels/products_viewmodel.dart: Полностью переписан для поддержки API.
+     - Добавлены состояния загрузки (isLoading), ошибок (hasError) и сообщения об ошибках.
+     - Реализовано слияние локальных данных с данными из API.
+     - Обновлен поиск: теперь он сначала ищет локально, затем догружает результаты из API.
+     - Добавлены методы loadDesserts() и refresh().
+
+4. Изменения в UI:
+   - lib/views/home_view.dart:
+     - Добавлен RefreshIndicator для обновления данных свайпом вниз.
+     - Реализовано состояние загрузки с анимированными карточками-заглушками (_ShimmerCard).
+     - Добавлен баннер ошибки с кнопкой "Retry".
+     - Обновлен поиск: добавлен индикатор "Searching online..." при выполнении запроса к API.
+
+5. Инициализация:
+   - lib/main.dart: Вызов 'context.read<ProductsViewModel>().loadDesserts()' добавлен в общую очередь загрузки данных при старте приложения.
+
+
+III. ФИНАЛЬНАЯ ПОЛИРОВКА И ЛИНТИНГ
+----------------------------------
+- Исправлено лишнее использование фигурных скобок в интерполяции строк (unnecessary_brace_in_string_interps) в meal_db_service.dart.
+- Исправлены лишние подчеркивания в AnimatedBuilder (unnecessary_underscores) в home_view.dart.
+
+IV. ИСПРАВЛЕНИЕ ОБОГАЩЕНИЯ ДАННЫХ (Ингредиенты и состав)
+------------------------------------------------------
+- lib/services/meal_db_service.dart: Оптимизирован метод fetchDesserts().
+  - Ранее полные данные загружались только для первых 10 продуктов.
+  - Теперь реализована пакетная загрузка (batch loading) полных деталей (состав, описание, нутриенты) для ВСЕХ продуктов.
+  - Используется параллельное выполнение запросов группами по 10 штук для сохранения скорости работы при гарантированном наличии состава.
+
+РЕЗУЛЬТАТ: Проект успешно проходит 'flutter analyze' (0 ошибок), интегрирован с реальным API, имеет современный UI и отображает полные данные (состав, КБЖУ, описание) для каждой позиции.
