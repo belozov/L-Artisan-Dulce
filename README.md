@@ -18,18 +18,17 @@
 
 | Product Detail | Cart & Checkout | Order Tracking |
 |----------------|-----------------|----------------|
-| ![Detail](screenshots/detail.png) | ![Cart](screenshots/cart.png) | ![Orders](screenshots/orders.png) |
+|  <img src="screenshots/detail.png" width="200"> | ![Cart](screenshots/cart.png) | ![Orders](screenshots/order.png) |
 
-| Profile | Mood Filter | Profile Settings |
-|---------|-------------|-----------------|
-| ![Profile](screenshots/profile.png) | ![Mood](screenshots/mood.png) | ![Settings](screenshots/settings.png) |
+| Profile  | Profile Settings |
+|---------|-----------------|
+| ![Profile](screenshots/profile.png) | ![Settings](screenshots/settings.png) |
 
 ---
 
 ## ✨ Features
 
 - **🍰 Product Catalogue** — Browse desserts by category (Macarons, Croissants, Cakes, etc.) with full-text search across names, categories, and ingredients
-- **🌙 Mood Filter** — Tell the app how you're feeling and get personalized dessert recommendations (Comfort → creamy cakes, Celebration → macarons, Energy → fruit desserts, Indulgence → premium chocolate)
 - **🛒 Cart & Favourites** — Real-time cart totals, persistent favourites across app restarts
 - **📦 Order Tracking** — Live order status flow: Created → Preparing → On the Way → Delivered
 - **👤 Auth & Profile** — Email login, guest browsing, profile editing with avatar upload (camera or gallery)
