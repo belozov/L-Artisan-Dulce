@@ -14,7 +14,7 @@
 
 | Login | Home | Catalogue |
 |-------|------|-----------|
-| ![Login](screenshots/login.png) | ![Home](screenshots/home.png) | ![Catalogue](screenshots/catalogue.png) |
+| ![Login](screenshots/login.png) | <img src="screenshots/home.png" width="200"> | ![Catalogue](screenshots/catalogue.png) |
 
 | Product Detail | Cart & Checkout | Order Tracking |
 |----------------|-----------------|----------------|
