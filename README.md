@@ -11,7 +11,6 @@
 
 ## 📱 Screenshots
 
-> _Add your screenshots here. Recommended: place images in a `/screenshots` folder and reference them below._
 
 | Login | Home | Catalogue |
 |-------|------|-----------|
@@ -173,18 +172,6 @@ The architecture is already set up for a real backend — `ApiService` is the on
 | Analytics | Firebase Analytics | Track which moods convert best |
 
 **Future ideas:** loyalty programme, user photo reviews, admin dashboard for bakery staff, AR dessert preview.
-
----
-
-## 👥 Team
-
-| Member | Role |
-|--------|------|
-| **Akhmet** | Architecture & project lead |
-| **Bekzat** | UI/UX and animations |
-| **Sultan** | State management and data layer |
-| **Batyrkhan** | Features and testing |
-
 ---
 
 ## 📄 License
@@ -193,4 +180,4 @@ This project was created as a final project for the **Cross Platform Development
 
 ---
 
-<p align="center">Made with ☕ and Flutter by Akhmet · Bekzat · Sultan · Batyrkhan</p>
+<p align="center">Made with ☕ and Flutter by Akhmet · Bekzat</p>
